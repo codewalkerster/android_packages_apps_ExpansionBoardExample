@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Expansion Board Example</string>
+    <string name="action_settings">Settings</string>
+    <string name="adc">ADC</string>
+    <string name="enable">enable</string>
+    <string name="light_sensor">Light Sensor</string>
+    <string name="zero">0</string>
+    <string name="lux"> Lux</string>
+    <string name="pressure_temparature">Pressure/Tempature Sensor</string>
+    <string name="pa"> pa     </string>
+    <string name="celsius"> °c</string>
+    <string name="key">Key</string>
+    <string name="led">LED</string>
+    <string name="blink">Blink Red LED</string>
+    <string name="eeprom">EEPROM(SPI)</string>
+    <string name="data">data : </string>
+    <string name="na">N/A</string>
+    <string name="write">Write</string>
+    <string name="read">Read</string>
+
+</resources>
