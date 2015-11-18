@@ -34,12 +34,12 @@ extern "C" JNIEXPORT jint Java_com_hardkernel_odroid_expansionboardexample_MainA
 }
 
 extern "C" JNIEXPORT void Java_com_hardkernel_odroid_expansionboardexample_MainActivity_SPIClose(JNIEnv* env, jobject obj) {
-   if (fd > 0)
-       close(fd);
+    if (fd > 0)
+        close(fd);
 }
-    
+
 extern "C" JNIEXPORT void Java_com_hardkernel_odroid_expansionboardexample_MainActivity_SPIWrite(JNIEnv* env, jobject obj, jbyteArray arr) {
-    
+
     jbyte *buf = env->GetByteArrayElements(arr, NULL);
 
     iocreg.cmd = IOBOARD_CMD_SPI_ERASE;
@@ -58,15 +58,15 @@ extern "C" JNIEXPORT void Java_com_hardkernel_odroid_expansionboardexample_MainA
     if (ioctl(fd, IOBOARD_IOCSREG, &iocreg) < 0)
         ALOGE("write IOCTL Error!\n");
 
-	env->ReleaseByteArrayElements(arr, buf, 0);
+    env->ReleaseByteArrayElements(arr, buf, 0);
 }
 
 extern "C" JNIEXPORT jbyteArray Java_com_hardkernel_odroid_expansionboardexample_MainActivity_SPIRead(JNIEnv* env, jobject obj) {
-    
+
     unsigned char temp[SIZE];
 
     memset(temp, 0x00, SIZE);
-    
+
     iocreg.cmd = IOBOARD_CMD_SPI_READ;
     iocreg.addr = 0x0;
     iocreg.size = SIZE;
