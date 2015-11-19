@@ -1,9 +1,11 @@
 package com.hardkernel.odroid.expansionboardexample;
 
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.InterruptedException;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,10 +47,16 @@ public class MainActivity extends Activity {
     private TextView mTV_Data;
     private Button mBTN_Write;
 
-    private static final String ADC_NODE = "/sys/bus/iio/devices/iio:device0/in_voltage0_raw";
-    private static final String LIGHT_SENSOR_NODE = "/sys/devices/i2c_gpio.11/i2c-3/3-0029/";
-    private static final String PRESSURE_SENSOR_NODE = "/sys/devices/i2c_gpio.11/i2c-3/3-0077/";
-    private static final String KEYLED_NODE = "/sys/devices/ioboard_key_led.10/";
+    private static final String ADC_NODE =
+        "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw";
+    private static final String LIGHT_SENSOR_NODE =
+        "/sys/devices/platform/i2c-gpio.10/i2c-10/10-0029/";
+    private static final String PRESSURE_SENSOR_NODE =
+        "/sys/devices/platform/i2c-gpio.10/i2c-10/10-0077/";
+    private static final String KEYLED_NODE =
+        "/sys/devices/platform/ioboard-keyled/";
+
+    private Process mSu;
 
     private Handler mHandler = new Handler() {
 
@@ -56,6 +64,9 @@ public class MainActivity extends Activity {
         public void handleMessage(Message msg) {
             // TODO Auto-generated method stub
             super.handleMessage(msg);
+
+            if (msg.what == 1)
+                return;
 
             // TODO Auto-generated method stub
             byte buffer[] = new byte[16];
@@ -432,15 +443,23 @@ public class MainActivity extends Activity {
         // TODO Auto-generated method stub
         super.onResume();
 
+        try {
+            mSu = Runtime.getRuntime().exec("su");
+        } catch (Exception e) {
+        }
+
+        ioboardInit();
+
         SPIOpen();
 
         updateControls();
-        mHandler.sendEmptyMessageDelayed(0, 1000);
 
         mCB_LED1.setChecked(false);
         mCB_LED2.setChecked(false);
         mCB_LED3.setChecked(false);
         mCB_LED4.setChecked(false);
+
+        boolean start = false;
 
         byte[] buffer = new byte[1];
         try {
@@ -460,12 +479,15 @@ public class MainActivity extends Activity {
             buffer[0] = '0';
             fos.write(buffer);
             fos.close();
+            start = true;
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            start = false;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            start = false;
         }
 
         FileInputStream fis;
@@ -494,13 +516,19 @@ public class MainActivity extends Activity {
             else
                 mCB_redLED.setChecked(false);
 
+            start = true;
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            start = false;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            start = false;
         }
+
+        if (start)
+            mHandler.sendEmptyMessageDelayed(0, 1000);
     }
 
     @Override
@@ -509,6 +537,8 @@ public class MainActivity extends Activity {
         super.onPause();
 
         SPIClose();
+
+        ioboardDeinit();
 
         mHandler.sendEmptyMessage(1);
     }
@@ -582,5 +612,59 @@ public class MainActivity extends Activity {
 
     static {
         System.loadLibrary("SPIUtil");
+    }
+
+    private void ioboardInit() {
+        try {
+            DataOutputStream stdin = new DataOutputStream(mSu.getOutputStream());
+            stdin.writeBytes(
+                    "/system/bin/insmod /system/lib/modules/i2c-gpio-custom.ko bus0=10,33,23,10,10\n");
+            stdin.writeBytes(
+                    "/system/bin/insmod /system/lib/modules/ioboard-bh1780.ko\n");
+            stdin.writeBytes(
+                    "/system/bin/insmod /system/lib/modules/ioboard-bmp180.ko\n");
+            stdin.writeBytes(
+                    "/system/bin/insmod /system/lib/modules/ioboard-keyled.ko\n");
+            stdin.writeBytes(
+                    "/system/bin/insmod /system/lib/modules/ioboard-spi-flash.ko\n");
+            stdin.writeBytes(
+                    "echo ioboard-bmp180 0x77 > /sys/devices/platform/i2c-gpio.10/i2c-10/new_device\n");
+            stdin.writeBytes(
+                    "echo ioboard-bh1780 0x29 > /sys/devices/platform/i2c-gpio.10/i2c-10/new_device\n");
+            Thread.sleep(1000);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void ioboardDeinit() {
+        try {
+            DataOutputStream stdin = new DataOutputStream(mSu.getOutputStream());
+            stdin.writeBytes(
+                    "echo 0x29 > /sys/devices/platform/i2c-gpio.10/i2c-10/delete_device\n");
+            stdin.writeBytes(
+                    "echo 0x77 > /sys/devices/platform/i2c-gpio.10/i2c-10/delete_device\n");
+            stdin.writeBytes(
+                    "/system/bin/rmmod ioboard_spi_flash\n");
+            stdin.writeBytes(
+                    "/system/bin/rmmod ioboard_keyled\n");
+            stdin.writeBytes(
+                    "/system/bin/rmmod ioboard_bmp180\n");
+            stdin.writeBytes(
+                    "/system/bin/rmmod ioboard_bh1780\n");
+            stdin.writeBytes(
+                    "system/bin/rmmod i2c_gpio_custom\n");
+            Thread.sleep(1000);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }
