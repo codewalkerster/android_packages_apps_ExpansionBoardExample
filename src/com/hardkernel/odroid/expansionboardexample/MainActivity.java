@@ -147,6 +147,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        try {
+            mSu = Runtime.getRuntime().exec("su");
+        } catch (Exception e) {
+        }
+
         mPB_ADC = (ProgressBar)findViewById(R.id.pb_adc);
 
         mCB_Light = (CheckBox)findViewById(R.id.cb_light);
@@ -442,11 +447,6 @@ public class MainActivity extends Activity {
     protected void onResume() {
         // TODO Auto-generated method stub
         super.onResume();
-
-        try {
-            mSu = Runtime.getRuntime().exec("su");
-        } catch (Exception e) {
-        }
 
         ioboardInit();
 
